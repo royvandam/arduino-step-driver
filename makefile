@@ -9,7 +9,7 @@ TARGET_BOARD    = arduino
 
 TOOLCHAIN = avr-
 
-SOURCES = main.cpp gpio.cpp assert.cpp
+SOURCES = main.cpp gpio.cpp assert.cpp ledring.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
 INCLUDES = -I.
@@ -18,10 +18,10 @@ OPTIONS  = -DF_CPU=$(TARGET_CLOCK) -DWITH_DEBUG=1 -DWITH_ASSERT=1
 EFLAGS  = -Wall -Wextra -Werror
 
 CXX =  $(TOOLCHAIN)g++
-CXXFLAGS = -mmcu=$(TARGET_MCU) $(EFLAGS) $(OPTIONS) $(INCLUDES) -Os -std=c++11 -fno-exceptions -ffunction-sections -fdata-sections -fno-threadsafe-statics 
+CXXFLAGS = -mmcu=$(TARGET_MCU) $(EFLAGS) $(OPTIONS) $(INCLUDES) -Os -fno-exceptions -ffunction-sections -fdata-sections -fno-threadsafe-statics
 
-LD_LIBS  =
-LDFLAGS = $(MMCU) $(CXXFLAGS) -Wl,--gc-sections $(LDLIBS)
+LDLIBS  =
+LDFLAGS = -mmcu=$(TARGET_MCU) $(EFLAGS) -Wl,--gc-sections
 
 LOADER_FLAGS = -C arduino.conf -v -p $(TARGET_MCU_TAG) -c $(TARGET_BOARD) -P $(TARGET_PORT) -b57600
 
@@ -34,7 +34,6 @@ OBJSIZE = $(TOOLCHAIN)size
 .SUFFIXES: .cpp .o .elf .hex
 
 .cpp.o:
-	@echo CXX $@
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 # Build rules
@@ -45,14 +44,11 @@ OBJSIZE = $(TOOLCHAIN)size
 all: $(SOURCES) $(TARGET).hex
 
 $(TARGET).hex: $(TARGET).elf
-	@echo OBJCOPY $@
-	@$(OBJCOPY) -O ihex -R .eephex $(TARGET).elf $(TARGET).hex
-	@echo OBJSIZE $@
-	@$(OBJSIZE) -t $(OBJECTS) $(TARGET).elf $(TARGET).hex
+	$(OBJCOPY) -O ihex -R .eeprom $(TARGET).elf $(TARGET).hex
+	$(OBJSIZE) -t $(OBJECTS) $(TARGET).elf $(TARGET).hex
 
 $(TARGET).elf: $(OBJECTS)
-	@echo LD $@
-	$(CXX) $(LDFLAGS) $(OBJECTS) -o $@
+	$(CXX) $(LDFLAGS) -o $@ $(OBJECTS)
 
 clean:
 	rm -rf $(OBJECTS) $(TARGET).*

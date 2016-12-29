@@ -7,36 +7,23 @@ extern "C" {
 
 namespace io {
 
-    typedef struct {
-        volatile uint8_t *out;  // Output register
-        volatile uint8_t *in;   // Input register
-        volatile uint8_t *ddr;  // Direction register
-        uint8_t size;           // Amount of pins in the port
-    } gpio_register_map;
-
-    #define gpio_register(port, register) (*_gpio_register_map[port].register)
-
 #if defined(__AVR_ATmega328P__)
-    #define gpio_ports 3
-
-    const static gpio_register_map portx = { &PORTB, &PINB, &DDRB, 8 };
-
-    const static gpio_register_map _gpio_register_map[gpio_ports] = {
+    const gpio::register_map gpio::_register_map[gpio::ports] = {
         { &PORTB, &PINB, &DDRB, 8 },
         { &PORTC, &PINC, &DDRC, 6 },
         { &PORTD, &PIND, &DDRD, 8 }
     };
-#else
-    #error "Unsupported target"
 #endif
+
+    #define gpio_register(port, register) (*gpio::_register_map[port].register)
 
     gpio::gpio(uint8_t port, uint8_t pin, gpio::direction direction)
         : _port(port)
         , _pin(1 << pin)
         , _direction(direction)
     {
-        assert(port < gpio_ports);
-        assert(pin < _gpio_register_map[pin].size);
+        assert(port < gpio::ports);
+        assert(pin < gpio::_register_map[port].size);
 
         this->set_direction(direction);
     }
@@ -68,7 +55,7 @@ namespace io {
     }
 
     bool gpio::get() const {
-        return (this->_direction)
+        return (this->_direction == gpio::in)
             ? (gpio_register(this->_port, in) & this->_pin)
             : (gpio_register(this->_port, out) & this->_pin);
     }
