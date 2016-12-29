@@ -11,6 +11,6 @@ void assert_failed(char const*, int) {
         PORTB |= (1 << PB5);
         _delay_ms(100);
         PORTB &= ~(1 << PB5);
-        _delay_ms(100);
+        _delay_ms(900);
     }
 }

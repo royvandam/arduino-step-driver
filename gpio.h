@@ -17,13 +17,30 @@ class gpio {
             on_edge_change
         } event;
 
+#if defined(__AVR_ATmega328P__)
         typedef enum {
-            portb = 0, portc, portd
+            portb, portc, portd
         } port;
+#else
+#error "Unsupported target"
+#endif
 
         typedef enum {
-            pin0 =0 , pin1, pin2, pin3, pin4, pin5, pin6, pin7
+            pin0, pin1, pin2, pin3, pin4, pin5, pin6, pin7
         } pin;
+
+        typedef struct {
+            volatile uint8_t* const out;  // Output register
+            volatile uint8_t* const in;   // Input register
+            volatile uint8_t* const ddr;  // Direction register
+            uint8_t size;           // Amount of pins in the port
+        } register_map;
+
+
+#if defined(__AVR_ATmega328P__)
+        enum { ports = 3 };
+        static const register_map _register_map[ports];
+#endif
 
     protected:
         uint8_t _port;
