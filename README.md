@@ -1,4 +1,4 @@
-# Arduino / ATMega8 C++ stepper motor control
+# Arduino / ATMega stepper motor control in C++
 Rudamentary stepper motor control with linear start/stop speed ramps.
 
 Control one or more stepper motor drivers that have an 'enable, direction, step' interface.
@@ -21,13 +21,13 @@ make install  # Assumes your bord is attached to /dev/ttyUSB0
 
 ## Classes
 
-### GPIO abstraction
+### GPIO
 ```c++
 gpio led(gpio::portb, gpio::pin5, gpio::out);
 led.set();
 ```
 
-### Motor abstraction
+### Motor
 ```c++
 gpio ena(gpio::portd, gpio::pin2, gpio::out);
 gpio dir(gpio::portd, gpio::pin4, gpio::out);
@@ -39,9 +39,9 @@ motor.step();
 motor.ccw();
 motor.cw();
 motor.disable();
-````
+```
 
-### Control abstraction
+### Control
 ```c++
 Control control(motor, 250, 8000, 4); // motor, start steps/sec, max steps/sec, ramp angle)
 control.move(4000); // Rotate shaft CW 4000 steps
