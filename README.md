@@ -1,8 +1,12 @@
 # Arduino / ATMega stepper motor control in C++
 Rudamentary stepper motor control with linear start/stop speed ramps.
 
+Small demo: https://youtu.be/yUwn1LcOEcw
+
 Control one or more stepper motor drivers that have an 'enable, direction, step' interface.
 Linear start/stop speed ramps for smoothisch movement.
+
+![test setup with NEMA24 motor and M542T microstep driver](http://i.imgur.com/yTeQb9S.jpg)
 
 ## Building/Installing
 
@@ -49,4 +53,4 @@ control.move(-4000, 2000); // Rotate shaft CCW by 4000 steps @ max 2000 step/sec
 ```
 
 ## License
-Do whatever you want with it... If you like it, just buy me beer if ever happen to meet me.
+Do whatever you want with it... If you like it, just buy me a beer if ever happen to meet me.
