@@ -7,82 +7,129 @@ extern "C" {
 
 class Motor {
 public:
-    Motor(gpio& a0, gpio& a1, gpio& b0, gpio& b1)
-        : a0(a0), a1(a1)
-        , b0(b0), b1(b1)
-        , step(0)
+    Motor(gpio& pul, gpio& dir, gpio& ena)
+        : pul(pul)
+        , dir(dir)
+        , ena(ena)
     {
-        a0.set();
-        b0.set();
-        a1.clear();
-        b1.clear();
+        pul.clear();
+        dir.clear();
     }
 
-    void step_forward() {
-        if (++step == 4) step = 0;
-        take_step();
+    void cw() {
+        dir.clear();
     }
 
-    void step_back() {
-        if (--step == -1) step = 3;
-        take_step();
+    void ccw() {
+        dir.set();
     }
 
-protected:
-    void take_step() {
-        switch (step) {
-            case 0:
-                b0.set();
-                b1.clear();
-                break;
-            case 1:
-                a0.clear();
-                a1.set();
-                break;
-            case 2:
-                b0.clear();
-                b1.set();
-                break;
-            case 3:
-                a0.set();
-                a1.clear();
-                break;
-        }
+    void enable() {
+        ena.clear();
+    }
+
+    void disable() {
+        ena.set();
+    }
+
+    void step() {
+        pul.set();
+        _delay_us(10);
+        pul.clear();
     }
 
 protected:
-    gpio &a0, &a1, &b0, &b1;
-    int8_t step;
+    gpio &pul, &dir, &ena;
 };
 
-int main() {
-    gpio a0(gpio::portd, gpio::pin6, gpio::out);
-    gpio a1(gpio::portd, gpio::pin7, gpio::out);
-    gpio b0(gpio::portb, gpio::pin0, gpio::out);
-    gpio b1(gpio::portb, gpio::pin1, gpio::out);
+class Control {
+public:
+    Control(Motor &motor, uint16_t min_sps=250, uint16_t max_sps=4000, uint16_t ramp_angle=4)
+        : motor(motor)
+        , min_sps(min_sps)
+        , max_sps(max_sps)
+        , ramp_angle(ramp_angle)
+    {}
 
-    gpio led(gpio::portb, gpio::pin5, gpio::out);
-    led.clear();
+    void move(int32_t input, uint16_t speed=0) {
+        uint32_t sps = min_sps;
+        uint32_t step = 0;
+        uint32_t steps;
 
-    Motor motor(a0, a1, b0, b1);
-
-    uint16_t steps = 0;
-    bool dir = false;
-
-    while (true) {
-        if (dir)
-            motor.step_back();
-        else
-            motor.step_forward();
-
-        if (++steps == 200) {
-            steps = 0;
-            dir = !dir;
-            _delay_ms(1000);
+        if (input == 0) {
+            return;
+        } else if (input < 0) {
+            motor.ccw();
+            steps = input * -1;
+        } else {
+            steps = input;
+            motor.cw();
         }
 
-        led.toggle();
-        _delay_ms(2);
+        if (speed == 0) {
+            speed = max_sps;
+        }
+
+        uint32_t ramp = (speed - min_sps) / ramp_angle;
+
+        while (step < steps) {
+            motor.step();
+            wait10us(100000 / sps);
+
+            if (step <= (steps / 2) && step < ramp) {
+                sps += ramp_angle;
+            }
+
+            if (step > (steps / 2) && (steps - step) < ramp) {
+                sps -= ramp_angle;
+            }
+
+            step++;
+        }
+    }
+
+protected:
+    void wait10us(uint32_t us) {
+        while(us--) {
+            _delay_us(10);
+        }
+    }
+
+protected:
+    Motor &motor;
+    uint16_t min_sps;
+    uint16_t max_sps;
+    uint16_t ramp_angle;
+};
+
+void idle(Motor &motor, gpio& led) {
+    _delay_ms(250);
+    motor.disable();
+    led.clear();
+    _delay_ms(2000);
+    led.set();
+    motor.enable();
+    _delay_ms(250);
+}
+
+int main() {
+    gpio ena(gpio::portd, gpio::pin2, gpio::out);
+    gpio dir(gpio::portd, gpio::pin4, gpio::out);
+    gpio pul(gpio::portd, gpio::pin6, gpio::out);
+
+    gpio led(gpio::portb, gpio::pin5, gpio::out);
+    led.set();
+
+    Motor motor(pul, dir, ena);
+    motor.enable();
+
+    Control control(motor);
+
+    while (true) {
+        control.move(8000, 6000);
+        idle(motor, led);
+        control.move(-8000, 6000);
+        idle(motor, led);
     }
 
     return 0;
